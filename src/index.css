@@ -1,0 +1,153 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Adorable Voice Translator Design System */
+    --background: 245 245 250; /* Very light lavender background */
+    --foreground: 30 30 46; /* Deep purple-gray text */
+
+    --card: 255 255 255; /* Pure white cards */
+    --card-foreground: 30 30 46;
+
+    --popover: 255 255 255;
+    --popover-foreground: 30 30 46;
+
+    /* Primary - Cute purple gradient */
+    --primary: 280 100 70; /* Bright purple */
+    --primary-foreground: 255 255 255;
+    --primary-glow: 300 100 75; /* Light purple */
+
+    /* Secondary - Adorable teal */
+    --secondary: 180 100 60; /* Bright teal */
+    --secondary-foreground: 255 255 255;
+
+    --muted: 240 10 90; /* Very light gray */
+    --muted-foreground: 240 10 50; /* Medium gray */
+
+    --accent: 320 100 75; /* Pink accent */
+    --accent-foreground: 255 255 255;
+
+    --destructive: 350 85 65; /* Soft red */
+    --destructive-foreground: 255 255 255;
+
+    --border: 240 20 85; /* Light purple border */
+    --input: 255 255 255; /* White inputs */
+    --ring: 280 100 70; /* Primary purple ring */
+
+    /* Custom design tokens for adorable theme */
+    --gradient-primary: linear-gradient(135deg, hsl(280 100% 70%), hsl(300 100% 75%));
+    --gradient-accent: linear-gradient(135deg, hsl(280 100% 70%), hsl(320 100% 75%));
+    --gradient-subtle: linear-gradient(180deg, hsl(245 245% 250%), hsl(260 100% 97%));
+    
+    --shadow-elegant: 0 10px 30px -10px hsl(280 100% 70% / 0.2);
+    --shadow-glow: 0 0 40px hsl(280 100% 70% / 0.3);
+    --shadow-card: 0 4px 12px -2px hsl(280 50% 70% / 0.15);
+    
+    --animation-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --animation-bounce: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    /* Dark mode with adorable colors */
+    --background: 240 15 8;
+    --foreground: 300 20 95;
+    --card: 240 20 12;
+    --card-foreground: 300 20 95;
+    --popover: 240 20 12;
+    --popover-foreground: 300 20 95;
+    --primary: 280 100 70;
+    --primary-foreground: 255 255 255;
+    --secondary: 180 80 60;
+    --secondary-foreground: 255 255 255;
+    --muted: 240 15 15;
+    --muted-foreground: 240 10 60;
+    --accent: 320 100 75;
+    --accent-foreground: 255 255 255;
+    --destructive: 350 85 65;
+    --destructive-foreground: 255 255 255;
+    --border: 240 20 20;
+    --input: 240 20 12;
+    --ring: 280 100 70;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Custom animations for voice translator */
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 20px hsl(var(--primary) / 0.3); }
+    50% { box-shadow: 0 0 40px hsl(var(--primary) / 0.6); }
+  }
+
+  @keyframes bounce-gentle {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+  }
+
+  @keyframes fade-in {
+    0% { opacity: 0; transform: translateY(10px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes slide-up {
+    0% { opacity: 0; transform: translateY(20px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  .animate-bounce-gentle {
+    animation: bounce-gentle 0.6s ease-out;
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.5s ease-out;
+  }
+
+  .animate-slide-up {
+    animation: slide-up 0.4s ease-out;
+  }
+}
