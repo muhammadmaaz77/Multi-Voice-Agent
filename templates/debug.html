@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Translation Debug</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a2e; color: white; }
+        .debug-section { margin: 20px 0; padding: 20px; background: #16213e; border-radius: 10px; }
+        button { padding: 10px 20px; margin: 5px; background: #4299e1; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #3182ce; }
+        #results { background: #2d3748; padding: 15px; border-radius: 5px; margin-top: 10px; }
+        .error { color: #e53e3e; }
+        .success { color: #38a169; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Voice Translation Debug Tool</h1>
+    
+    <div class="debug-section">
+        <h2>Step 1: Test Text Translation</h2>
+        <p>First, let's test if the Groq API translation is working:</p>
+        <input type="text" id="testText" value="Hello, how are you?" style="width: 300px; padding: 8px;">
+        <select id="sourceLanguage">
+            <option value="en">English</option>
+            <option value="de">German</option>
+            <option value="ru">Russian</option>
+            <option value="es">Spanish</option>
+        </select>
+        <select id="targetLanguage">
+            <option value="de" selected>German</option>
+            <option value="en">English</option>
+            <option value="ru">Russian</option>
+            <option value="es">Spanish</option>
+        </select>
+        <button onclick="testTranslation()">Test Translation</button>
+        <div id="translationResult"></div>
+    </div>
+
+    <div class="debug-section">
+        <h2>Step 2: Test WebSocket Connection</h2>
+        <p>Test if the WebSocket connection is working:</p>
+        <input type="text" id="roomId" value="5505471429" style="width: 200px; padding: 8px;">
+        <input type="text" id="participantName" value="DEBUG_USER" style="width: 200px; padding: 8px;">
+        <button onclick="testWebSocket()">Connect to Room</button>
+        <button onclick="disconnectWebSocket()">Disconnect</button>
+        <div id="websocketResult"></div>
+    </div>
+
+    <div class="debug-section">
+        <h2>Step 3: Test Voice Recording</h2>
+        <p>Test if voice recording is working (no translation, just recording):</p>
+        <button onmousedown="startTestRecording()" onmouseup="stopTestRecording()">🎤 Hold to Record</button>
+        <div id="voiceResult"></div>
+    </div>
+
+    <div class="debug-section">
+        <h2>Debug Results</h2>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        let ws = null;
+        let mediaRecorder = null;
+        let audioChunks = [];
+
+        function log(message, type = 'info') {
+            const results = document.getElementById('results');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : '';
+            results.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            results.scrollTop = results.scrollHeight;
+        }
+
+        async function testTranslation() {
+            const text = document.getElementById('testText').value;
+            const sourceLang = document.getElementById('sourceLanguage').value;
+            const targetLang = document.getElementById('targetLanguage').value;
+            
+            log(`Testing translation: "${text}" from ${sourceLang} to ${targetLang}`);
+            
+            try {
+                const response = await fetch('/voice_translator/test-translate/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        text: text,
+                        source_language: sourceLang,
+                        target_language: targetLang
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    log(`✅ Translation successful: "${result.translated_text}"`, 'success');
+                    document.getElementById('translationResult').innerHTML = 
+                        `<div class="success">Original: ${result.original_text}<br>Translated: ${result.translated_text}</div>`;
+                } else {
+                    log(`❌ Translation failed: ${result.error}`, 'error');
+                    document.getElementById('translationResult').innerHTML = 
+                        `<div class="error">Error: ${result.error}</div>`;
+                }
+            } catch (error) {
+                log(`❌ Translation request failed: ${error.message}`, 'error');
+                document.getElementById('translationResult').innerHTML = 
+                    `<div class="error">Request failed: ${error.message}</div>`;
+            }
+        }
+
+        function testWebSocket() {
+            const roomId = document.getElementById('roomId').value;
+            const participantName = document.getElementById('participantName').value;
+            
+            log(`Connecting to WebSocket for room ${roomId} as ${participantName}`);
+            
+            try {
+                ws = new WebSocket(`ws://127.0.0.1:8000/ws/conference/${roomId}/`);
+                
+                ws.onopen = () => {
+                    log('✅ WebSocket connected', 'success');
+                    ws.send(JSON.stringify({
+                        type: 'join_conference',
+                        participant_name: participantName,
+                        language: 'en'
+                    }));
+                    document.getElementById('websocketResult').innerHTML = 
+                        '<div class="success">WebSocket connected successfully</div>';
+                };
+                
+                ws.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    log(`📨 Received: ${data.type}`, 'info');
+                    if (data.type === 'error') {
+                        log(`❌ WebSocket error: ${data.message}`, 'error');
+                    }
+                };
+                
+                ws.onerror = (error) => {
+                    log(`❌ WebSocket error: ${error}`, 'error');
+                    document.getElementById('websocketResult').innerHTML = 
+                        '<div class="error">WebSocket connection failed</div>';
+                };
+                
+                ws.onclose = () => {
+                    log('WebSocket disconnected');
+                    document.getElementById('websocketResult').innerHTML = 
+                        '<div>WebSocket disconnected</div>';
+                };
+                
+            } catch (error) {
+                log(`❌ WebSocket creation failed: ${error.message}`, 'error');
+            }
+        }
+
+        function disconnectWebSocket() {
+            if (ws) {
+                ws.close();
+                ws = null;
+                log('WebSocket manually disconnected');
+            }
+        }
+
+        async function startTestRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = (event) => {
+                    audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    log(`✅ Recording completed: ${audioBlob.size} bytes`, 'success');
+                    document.getElementById('voiceResult').innerHTML = 
+                        `<div class="success">Recording successful: ${audioBlob.size} bytes</div>`;
+                };
+
+                mediaRecorder.start();
+                log('🎤 Recording started...');
+                document.getElementById('voiceResult').innerHTML = '<div>Recording...</div>';
+
+            } catch (error) {
+                log(`❌ Recording failed: ${error.message}`, 'error');
+                document.getElementById('voiceResult').innerHTML = 
+                    `<div class="error">Recording failed: ${error.message}</div>`;
+            }
+        }
+
+        function stopTestRecording() {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                log('Recording stopped');
+            }
+        }
+
+        // Initialize
+        log('Debug tool loaded. Test each step in order.');
+    </script>
+</body>
+</html>

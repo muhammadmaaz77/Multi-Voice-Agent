@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Voice Conference</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: white;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            color: #8b5cf6;
+        }
+
+        .room-info {
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .room-id {
+            font-size: 0.875rem;
+            color: #a1a1aa;
+            margin-bottom: 0.5rem;
+        }
+
+        .room-name {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #8b5cf6;
+        }
+
+        .participants-section {
+            flex: 1;
+        }
+
+        .section-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #a1a1aa;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .participant {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .participant:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .participant.speaking {
+            background: rgba(34, 197, 94, 0.2);
+            border-color: rgba(34, 197, 94, 0.5);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .participant-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+            margin-right: 0.75rem;
+        }
+
+        .participant-info {
+            flex: 1;
+        }
+
+        .participant-name {
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+
+        .participant-language {
+            font-size: 0.75rem;
+            color: #a1a1aa;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+        }
+
+        /* Main Area */
+        .main-area {
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .join-form {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .input-label {
+            font-size: 0.75rem;
+            color: #a1a1aa;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .input-field {
+            padding: 0.75rem 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            font-size: 0.875rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #8b5cf6;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .select-field {
+            padding: 0.75rem 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            font-size: 0.875rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(139, 92, 246, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* Voice Controls */
+        .voice-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 4rem 2rem;
+        }
+
+        .voice-visualizer {
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.3) 0%, transparent 70%);
+            border: 2px solid rgba(139, 92, 246, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 3rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .voice-visualizer.active {
+            animation: voicePulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes voicePulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7);
+            }
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 0 0 20px rgba(139, 92, 246, 0);
+            }
+        }
+
+        .mic-button {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+            border: none;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mic-button:hover {
+            transform: scale(1.1);
+        }
+
+        .mic-button.recording {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            animation: recordPulse 1s ease-in-out infinite;
+        }
+
+        @keyframes recordPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .status-text {
+            font-size: 1.125rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+            color: #a1a1aa;
+        }
+
+        .translation-display {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-top: 2rem;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .translation-item {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .translation-item:last-child {
+            border-bottom: none;
+        }
+
+        .speaker-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .speaker-name {
+            font-weight: 600;
+            margin-right: 1rem;
+        }
+
+        .speaker-language {
+            font-size: 0.75rem;
+            color: #a1a1aa;
+            background: rgba(139, 92, 246, 0.2);
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+        }
+
+        .original-text {
+            font-style: italic;
+            color: #d1d5db;
+            margin-bottom: 0.5rem;
+        }
+
+        .translated-text {
+            color: white;
+            font-weight: 500;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                display: none;
+            }
+        }
+
+        /* Hidden initially */
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">🎤 AI Conference</div>
+            
+            <div class="room-info">
+                <div class="room-id">Room ID: <span id="current-room-id">Not Connected</span></div>
+                <div class="room-name" id="current-room-name">Join a room to start</div>
+            </div>
+
+            <div class="participants-section">
+                <div class="section-title">Participants</div>
+                <div id="participants-list">
+                    <!-- Participants will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Area -->
+        <div class="main-area">
+            <!-- Header -->
+            <div class="header">
+                <div id="join-form" class="join-form">
+                    <div class="input-group">
+                        <label class="input-label">Your Name</label>
+                        <input type="text" id="participant-name" class="input-field" placeholder="Enter your name">
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Room ID</label>
+                        <input type="text" id="room-id-input" class="input-field" placeholder="Room ID">
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Your Language</label>
+                        <select id="user-language" class="select-field">
+                            <option value="en">🇺🇸 English</option>
+                            <option value="es">🇪🇸 Spanish</option>
+                            <option value="fr">🇫🇷 French</option>
+                            <option value="de">🇩🇪 German</option>
+                            <option value="ru">🇷🇺 Russian</option>
+                            <option value="zh">🇨🇳 Chinese</option>
+                            <option value="ja">🇯🇵 Japanese</option>
+                            <option value="ko">🇰🇷 Korean</option>
+                        </select>
+                    </div>
+                    <button id="join-btn" class="btn btn-primary">Join Conference</button>
+                </div>
+
+                <div id="conference-controls" class="join-form hidden">
+                    <button id="leave-btn" class="btn btn-secondary">Leave Conference</button>
+                </div>
+            </div>
+
+            <!-- Voice Area -->
+            <div class="voice-area">
+                <div id="status-text" class="status-text">Click "Join Conference" to start</div>
+                
+                <div id="voice-visualizer" class="voice-visualizer">
+                    <button id="mic-button" class="mic-button" disabled>
+                        🎤
+                    </button>
+                </div>
+
+                <div id="translation-display" class="translation-display hidden">
+                    <!-- Real-time translations will appear here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let socket = null;
+        let isRecording = false;
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let currentParticipant = null;
+
+        // DOM Elements
+        const joinForm = document.getElementById('join-form');
+        const conferenceControls = document.getElementById('conference-controls');
+        const participantNameInput = document.getElementById('participant-name');
+        const roomIdInput = document.getElementById('room-id-input');
+        const userLanguageSelect = document.getElementById('user-language');
+        const joinBtn = document.getElementById('join-btn');
+        const leaveBtn = document.getElementById('leave-btn');
+        const micButton = document.getElementById('mic-button');
+        const voiceVisualizer = document.getElementById('voice-visualizer');
+        const statusText = document.getElementById('status-text');
+        const translationDisplay = document.getElementById('translation-display');
+        const participantsList = document.getElementById('participants-list');
+        const currentRoomId = document.getElementById('current-room-id');
+        const currentRoomName = document.getElementById('current-room-name');
+
+        // Join Conference
+        joinBtn.addEventListener('click', async () => {
+            const name = participantNameInput.value.trim();
+            const roomId = roomIdInput.value.trim();
+            const language = userLanguageSelect.value;
+
+            if (!name || !roomId) {
+                alert('Please enter your name and room ID');
+                return;
+            }
+
+            try {
+                await joinConference(name, roomId, language);
+            } catch (error) {
+                console.error('Failed to join conference:', error);
+                statusText.textContent = 'Failed to join conference. Please try again.';
+            }
+        });
+
+        // Leave Conference
+        leaveBtn.addEventListener('click', () => {
+            leaveConference();
+        });
+
+        // Microphone Control
+        micButton.addEventListener('click', async () => {
+            if (!isRecording) {
+                await startRecording();
+            } else {
+                await stopRecording();
+            }
+        });
+
+        async function joinConference(name, roomId, language) {
+            // Create WebSocket connection
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${wsProtocol}//${window.location.host}/ws/conference/${roomId}/`;
+            
+            socket = new WebSocket(wsUrl);
+
+            socket.onopen = () => {
+                console.log('WebSocket connected');
+                
+                // Send join message
+                socket.send(JSON.stringify({
+                    type: 'join_conference',
+                    participant_name: name,
+                    language: language
+                }));
+
+                // Update UI
+                joinForm.classList.add('hidden');
+                conferenceControls.classList.remove('hidden');
+                currentRoomId.textContent = roomId;
+                currentRoomName.textContent = `Conference Room`;
+                statusText.textContent = 'Connected! Press and hold the microphone to speak';
+                micButton.disabled = false;
+                translationDisplay.classList.remove('hidden');
+
+                currentParticipant = { name, language };
+            };
+
+            socket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                console.log('Received:', data);
+                handleWebSocketMessage(data);
+            };
+
+            socket.onclose = () => {
+                console.log('WebSocket disconnected');
+                statusText.textContent = 'Disconnected from conference';
+            };
+
+            socket.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                statusText.textContent = 'Connection error. Please try again.';
+            };
+        }
+
+        function leaveConference() {
+            if (socket) {
+                socket.close();
+            }
+            
+            // Reset UI
+            joinForm.classList.remove('hidden');
+            conferenceControls.classList.add('hidden');
+            currentRoomId.textContent = 'Not Connected';
+            currentRoomName.textContent = 'Join a room to start';
+            statusText.textContent = 'Click "Join Conference" to start';
+            micButton.disabled = true;
+            translationDisplay.classList.add('hidden');
+            participantsList.innerHTML = '';
+            isRecording = false;
+            voiceVisualizer.classList.remove('active');
+            micButton.classList.remove('recording');
+            micButton.textContent = '🎤';
+        }
+
+        async function startRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = (event) => {
+                    audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    await sendAudioMessage(audioBlob);
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+                micButton.classList.add('recording');
+                micButton.textContent = '🔴';
+                voiceVisualizer.classList.add('active');
+                statusText.textContent = 'Recording... Release to send';
+
+            } catch (error) {
+                console.error('Error starting recording:', error);
+                statusText.textContent = 'Microphone access denied';
+            }
+        }
+
+        async function stopRecording() {
+            if (mediaRecorder && isRecording) {
+                mediaRecorder.stop();
+                isRecording = false;
+                micButton.classList.remove('recording');
+                micButton.textContent = '🎤';
+                voiceVisualizer.classList.remove('active');
+                statusText.textContent = 'Processing...';
+
+                // Stop all tracks
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            }
+        }
+
+        async function sendAudioMessage(audioBlob) {
+            if (!socket || !currentParticipant) return;
+
+            // Convert blob to base64 for WebSocket transmission
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const base64Audio = reader.result.split(',')[1];
+                
+                socket.send(JSON.stringify({
+                    type: 'voice_message',
+                    audio_data: base64Audio,
+                    speaker_language: currentParticipant.language
+                }));
+                
+                statusText.textContent = 'Press and hold to speak again';
+            };
+            reader.readAsDataURL(audioBlob);
+        }
+
+        function handleWebSocketMessage(data) {
+            switch (data.type) {
+                case 'participant_joined':
+                    addParticipant(data.participant);
+                    break;
+                case 'participant_left':
+                    removeParticipant(data.participant_id);
+                    break;
+                case 'participants_list':
+                    updateParticipantsList(data.participants);
+                    break;
+                case 'voice_translation':
+                    displayTranslation(data);
+                    break;
+                case 'speaking_status':
+                    updateSpeakingStatus(data.participant_id, data.is_speaking);
+                    break;
+                case 'error':
+                    statusText.textContent = `Error: ${data.message}`;
+                    break;
+            }
+        }
+
+        function updateParticipantsList(participants) {
+            participantsList.innerHTML = '';
+            participants.forEach(participant => {
+                addParticipant(participant);
+            });
+        }
+
+        function addParticipant(participant) {
+            const participantElement = document.createElement('div');
+            participantElement.className = 'participant';
+            participantElement.id = `participant-${participant.id}`;
+            
+            const languageFlags = {
+                'en': '🇺🇸', 'es': '🇪🇸', 'fr': '🇫🇷', 'de': '🇩🇪',
+                'ru': '🇷🇺', 'zh': '🇨🇳', 'ja': '🇯🇵', 'ko': '🇰🇷'
+            };
+            
+            participantElement.innerHTML = `
+                <div class="participant-avatar">${participant.name.charAt(0).toUpperCase()}</div>
+                <div class="participant-info">
+                    <div class="participant-name">${participant.name}</div>
+                    <div class="participant-language">${languageFlags[participant.language] || '🌐'} ${participant.language.toUpperCase()}</div>
+                </div>
+                <div class="status-indicator"></div>
+            `;
+            
+            participantsList.appendChild(participantElement);
+        }
+
+        function removeParticipant(participantId) {
+            const element = document.getElementById(`participant-${participantId}`);
+            if (element) {
+                element.remove();
+            }
+        }
+
+        function updateSpeakingStatus(participantId, isSpeaking) {
+            const element = document.getElementById(`participant-${participantId}`);
+            if (element) {
+                if (isSpeaking) {
+                    element.classList.add('speaking');
+                } else {
+                    element.classList.remove('speaking');
+                }
+            }
+        }
+
+        function displayTranslation(data) {
+            const translationItem = document.createElement('div');
+            translationItem.className = 'translation-item';
+            
+            const languageFlags = {
+                'en': '🇺🇸', 'es': '🇪🇸', 'fr': '🇫🇷', 'de': '🇩🇪',
+                'ru': '🇷🇺', 'zh': '🇨🇳', 'ja': '🇯🇵', 'ko': '🇰🇷'
+            };
+            
+            translationItem.innerHTML = `
+                <div class="speaker-info">
+                    <span class="speaker-name">${data.speaker_name}</span>
+                    <span class="speaker-language">${languageFlags[data.original_language] || '🌐'} ${data.original_language.toUpperCase()}</span>
+                </div>
+                <div class="original-text">"${data.original_text}"</div>
+                <div class="translated-text">${data.translated_text}</div>
+            `;
+            
+            translationDisplay.insertBefore(translationItem, translationDisplay.firstChild);
+            
+            // Keep only the last 5 translations
+            const items = translationDisplay.querySelectorAll('.translation-item');
+            if (items.length > 5) {
+                items[items.length - 1].remove();
+            }
+        }
+
+        // Generate random room ID
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!roomIdInput.value) {
+                roomIdInput.value = Math.random().toString(36).substring(2, 8).toUpperCase();
+            }
+        });
+    </script>
+</body>
+</html>
